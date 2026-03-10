@@ -1,0 +1,49 @@
+using Employee.API.Endpoints;
+using Employee.API.Extensions;
+using Employee.API.Middleware;
+using Employee.Infrastructure.Data;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+
+var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
+// Database
+builder.Services.AddDbContext<Tenant1DbContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("TenantConnection")));
+
+// Application Services
+builder.Services.ServiceClass(builder.Configuration);
+builder.Services.AddEndpointsApiExplorer();
+
+builder.Services.AddSwaggerGen();
+// Exception handler
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+builder.Services.AddProblemDetails();
+
+builder.Services.Configure<ApiBehaviorOptions>(options =>
+{
+    var isDev = builder.Environment.IsDevelopment();
+    options.InvalidModelStateResponseFactory = context =>
+        ValidationResponseHelper.CreateValidationErrorResponse(context, isDev);
+});
+
+var app = builder.Build();
+
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
+
+// Middleware
+app.UseExceptionHandler();
+
+app.MapGet("/", () => "Auth API Running 🚀");
+
+// Minimal API endpoints
+app.MapEmployeeEndpoints();
+
+app.Run();
