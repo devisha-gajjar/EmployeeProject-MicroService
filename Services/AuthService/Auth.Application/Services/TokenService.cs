@@ -23,10 +23,12 @@ public class TokenService(IConfiguration configuration) : ITokenService
 
         var claims = new List<Claim>
             {
-                new Claim(ClaimTypes.Email, user.Email),
+                new Claim(ClaimTypes.Email, user.Email),    
                 new Claim(ClaimTypes.Role, user.Role.RoleName!),
                 new Claim(ClaimTypes.Name, user.UserId.ToString()),
                 new Claim(ClaimTypes.GivenName, user.Username),
+                new Claim(ClaimTypes.NameIdentifier, user.Tenant.SchemaName),
+                new Claim("Tenant Id", user.TenantId.ToString()),
                 new Claim("2fa", "true")
             };
 

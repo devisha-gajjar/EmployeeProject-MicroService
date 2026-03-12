@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 namespace Auth.Domain.Models;
@@ -49,5 +49,9 @@ public partial class User
 
     public DateTime? LockoutUntil { get; set; }
 
+    public int TenantId { get; set; }
+
     public virtual Role Role { get; set; } = null!;
+
+    public virtual Tenant Tenant { get; set; } = null!;
 }

@@ -1,9 +1,9 @@
 using Auth.Application.ServiceInterfaces;
 using Auth.Domain.DTOs;
 using Auth.Domain.Models;
-using Auth.Infrastructure.Interface;
 using Employee.Shared.Constants;
 using Employee.Shared.Exceptions;
+using Employee.Shared.Interfaces;
 using OtpNet;
 
 namespace Auth.Application.Services;

@@ -4,16 +4,22 @@ public class TenantForwardingMiddleware(RequestDelegate next, ILogger<TenantForw
 {
     public async Task InvokeAsync(HttpContext context)
     {
-        // JWT already validated by UseAuthentication() above
-        var tenantId = context.User?.FindFirst("tenant_id")?.Value;
+        var tenantId = context.User?.FindFirst("Tenant Id")?.Value;
 
-        if (!string.IsNullOrEmpty(tenantId))
+        var schemaName = context.User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+
+        if (!string.IsNullOrEmpty(tenantId) || !string.IsNullOrEmpty(schemaName))
         {
-            context.Request.Headers["X-Tenant-ID"] = tenantId;
+            if (!string.IsNullOrEmpty(tenantId))
+                context.Request.Headers["X-Tenant-ID"] = tenantId;
+
+            if (!string.IsNullOrEmpty(schemaName))
+                context.Request.Headers["X-Tenant-Schema"] = schemaName;
+
             context.Request.Headers["X-Forwarded-By"] = "ApiGateway";
 
-            logger.LogInformation("[Gateway] {Method} {Path} → TenantId: {TenantId}",
-                context.Request.Method, context.Request.Path, tenantId);
+            logger.LogInformation("[Gateway] {Method} {Path} → ID: {TenantId}, Schema: {SchemaName}",
+                context.Request.Method, context.Request.Path, tenantId, schemaName);
         }
 
         await next(context);

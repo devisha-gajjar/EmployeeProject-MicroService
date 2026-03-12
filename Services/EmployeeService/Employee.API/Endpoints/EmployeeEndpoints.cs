@@ -9,12 +9,11 @@ namespace Employee.API.Endpoints;
 
 public static class EmployeeEndpoints // Must be static
 {
-
     public static void MapEmployeeEndpoints(this IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup("/employees");
+        var group = app.MapGroup("api/employee");
 
-        group.MapGet("/get-all", ([FromServices] GetEmployeesHandler handler) =>
+        group.MapGet("/", ([FromServices] GetEmployeesHandler handler) =>
             Results.Ok(handler.Handle()));
 
         group.MapGet("/{id:int}", (int id, [FromServices] GetEmployeeByIdHandler handler) =>

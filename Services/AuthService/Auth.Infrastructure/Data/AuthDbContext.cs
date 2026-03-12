@@ -1,4 +1,4 @@
-using Auth.Domain.Models;
+﻿using Auth.Domain.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace Auth.Infrastructure.Data;
@@ -15,6 +15,8 @@ public partial class AuthDbContext : DbContext
     }
 
     public virtual DbSet<Role> Roles { get; set; }
+
+    public virtual DbSet<Tenant> Tenants { get; set; }
 
     public virtual DbSet<User> Users { get; set; }
 
@@ -35,6 +37,32 @@ public partial class AuthDbContext : DbContext
             entity.Property(e => e.RoleName)
                 .HasMaxLength(255)
                 .HasColumnName("role_name");
+        });
+
+        modelBuilder.Entity<Tenant>(entity =>
+        {
+            entity.HasKey(e => e.TenantId).HasName("tenants_pkey");
+
+            entity.ToTable("tenants");
+
+            entity.HasIndex(e => e.SchemaName, "tenants_schema_name_key").IsUnique();
+
+            entity.Property(e => e.TenantId)
+                .HasDefaultValueSql("nextval('tenants_tenant_id_seq1'::regclass)")
+                .HasColumnName("tenant_id");
+            entity.Property(e => e.CompanyName)
+                .HasMaxLength(255)
+                .HasColumnName("company_name");
+            entity.Property(e => e.CreatedOn)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnType("timestamp without time zone")
+                .HasColumnName("created_on");
+            entity.Property(e => e.IsActive)
+                .HasDefaultValue(true)
+                .HasColumnName("is_active");
+            entity.Property(e => e.SchemaName)
+                .HasMaxLength(63)
+                .HasColumnName("schema_name");
         });
 
         modelBuilder.Entity<User>(entity =>
@@ -95,6 +123,7 @@ public partial class AuthDbContext : DbContext
                 .HasColumnType("character varying")
                 .HasColumnName("profile_picture");
             entity.Property(e => e.RoleId).HasColumnName("role_id");
+            entity.Property(e => e.TenantId).HasColumnName("tenant_id");
             entity.Property(e => e.TwoFactorEnabledOn)
                 .HasColumnType("timestamp without time zone")
                 .HasColumnName("two_factor_enabled_on");
@@ -110,7 +139,13 @@ public partial class AuthDbContext : DbContext
                 .HasForeignKey(d => d.RoleId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("fk_role");
+
+            entity.HasOne(d => d.Tenant).WithMany(p => p.Users)
+                .HasForeignKey(d => d.TenantId)
+                .HasConstraintName("fk_tenant");
         });
+        modelBuilder.HasSequence("global_users_global_user_id_seq");
+        modelBuilder.HasSequence("tenants_tenant_id_seq");
 
         OnModelCreatingPartial(modelBuilder);
     }

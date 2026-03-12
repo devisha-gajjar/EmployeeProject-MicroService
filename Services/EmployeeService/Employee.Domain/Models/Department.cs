@@ -11,7 +11,5 @@ public partial class Department
 
     public int? ManagerId { get; set; }
 
-    public virtual ICollection<EmployeeDepartment> EmployeeDepartments { get; set; } = new List<EmployeeDepartment>();
-
     public virtual ICollection<EmployeeList> EmployeeLists { get; set; } = new List<EmployeeList>();
 }

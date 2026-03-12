@@ -1,7 +1,7 @@
 using Auth.Application.ServiceInterfaces;
 using Auth.Application.Services;
-using Auth.Infrastructure.Interface;
 using Auth.Infrastructure.Repositories;
+using Employee.Shared.Interfaces;
 
 namespace Auth.API.Extensions;
 

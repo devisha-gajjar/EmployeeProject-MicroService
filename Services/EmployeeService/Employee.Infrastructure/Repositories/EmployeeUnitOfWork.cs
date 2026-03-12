@@ -9,12 +9,12 @@ namespace Employee.Infrastructure.Repositories;
 public class EmployeeUnitOfWork : IEmployeeUnitOfWork
 {
     // Uses the specific DbContext for the Employee microservice
-    private readonly Tenant1DbContext _context;
+    private readonly TenantDbContext _context;
 
     public IGenericRepository<EmployeeList> Employees { get; private set; }
     public IGenericRepository<Department> Departments { get; private set; }
 
-    public EmployeeUnitOfWork(Tenant1DbContext context)
+    public EmployeeUnitOfWork(TenantDbContext context)
     {
         _context = context;
 
@@ -30,7 +30,7 @@ public class EmployeeUnitOfWork : IEmployeeUnitOfWork
     }
 
     public async Task<int> SaveAsync()
-    {   
+    {
         return await _context.SaveChangesAsync();
     }
 

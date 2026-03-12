@@ -3,9 +3,9 @@ using Auth.Application.ServiceInterfaces;
 using Auth.Domain.Constantss;
 using Auth.Domain.DTOs;
 using Auth.Domain.Models;
-using Auth.Infrastructure.Interface;
 using Employee.Shared.Constants;
 using Employee.Shared.Exceptions;
+using Employee.Shared.Interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -44,7 +44,9 @@ public class AuthService(ICustomService customService, IGenericRepository<User> 
     {
         var user = await userRepository.GetByInclude(
             u => (u.Email == dto.Email || u.Username == dto.Email) && !u.IsDeleted,
-            q => q.Include(u => u.Role)
+            q => q
+                .Include(u => u.Role)
+                .Include(u => u.Tenant)
         ) ?? throw new AppException(Constants.INVALID_LOGIN_CREDENTIALS_MESSAGE);
 
         if (user.LockoutUntil.HasValue && user.LockoutUntil > DateTime.Now)
@@ -158,8 +160,12 @@ public class AuthService(ICustomService customService, IGenericRepository<User> 
         );
 
         // 2. Load user
-        var user = userRepository.GetById(userId)
-            ?? throw new AppException("User not found");
+        var user = await userRepository.GetByInclude(
+          u => (u.UserId == userId) && !u.IsDeleted,
+          q => q
+              .Include(u => u.Role)
+              .Include(u => u.Tenant)
+            ) ?? throw new AppException(Constants.INVALID_LOGIN_CREDENTIALS_MESSAGE);
 
         if (string.IsNullOrWhiteSpace(user.TwoFactorSecret))
             throw new AppException("2FA is not enabled for this user");
@@ -175,7 +181,7 @@ public class AuthService(ICustomService customService, IGenericRepository<User> 
             throw new AppException("Invalid authentication code");
 
         // 4. Issue final access token
-        var accessToken = customService.GenerateJwtToken(user.Username);
+        var accessToken = tokenService.GenerateAccessToken(user);
         var refreshToken = tokenService.GenerateRefreshToken(user, rememberMe);
 
         return new AuthTokenResponseDto
@@ -220,7 +226,7 @@ public class AuthService(ICustomService customService, IGenericRepository<User> 
         }
 
         User? user = await userRepository.GetByInclude(u => u.UserId == userId && !u.IsDeleted,
-            query => query.Include(u => u.Role))
+            query => query.Include(u => u.Role).Include(u => u.Tenant))
             ?? throw new ArgumentException(GlobalConstants.USER_NOT_FOUND);
 
         if (isExpired)

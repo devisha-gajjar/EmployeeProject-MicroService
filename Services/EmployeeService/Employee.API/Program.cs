@@ -11,7 +11,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 // Database
-builder.Services.AddDbContext<Tenant1DbContext>(options =>
+builder.Services.AddDbContext<TenantDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("TenantConnection")));
 
 // Application Services
@@ -40,6 +40,8 @@ if (app.Environment.IsDevelopment())
 
 // Middleware
 app.UseExceptionHandler();
+
+app.UseMiddleware<TenantSchemaMiddleware>();
 
 app.MapGet("/", () => "Auth API Running 🚀");
 

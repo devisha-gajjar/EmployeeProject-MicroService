@@ -1,6 +1,6 @@
 using System.Linq.Expressions;
 using Auth.Infrastructure.Data;
-using Auth.Infrastructure.Interface;
+using Employee.Shared.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
 namespace Auth.Infrastructure.Repositories;
