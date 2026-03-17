@@ -1,57 +1,55 @@
-// using MediatR;
-// using Microsoft.EntityFrameworkCore;
-// using Microsoft.EntityFrameworkCore.Infrastructure;
-// using Microsoft.EntityFrameworkCore.Storage;
-// using Tenant.Api.Features.Tenants.Commands;
-// using Tenant.Infrastructure.Data;
-// using TenantClass = Tenant.Domain.Models.Tenant;
+using Employee.Shared.Exceptions;
+using MediatR;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Storage;
+using Tenant.Api.Features.Tenants.Commands;
+using Tenant.Application.Interface;
+using Tenant.Domain.Dtos;
+using Tenant.Domain.Models;
+using Tenant.Infrastructure.Data.Host;
+using Tenant.Infrastructure.Data.Tenant;
+using TenantClass = Tenant.Domain.Models.Tenant;
 
-// namespace Tenant.Application.Features.Tenants.Handlers;
+namespace Tenant.API.Features.Tenants.Handler;
 
-// public class CreateTenantHandler(TenantDbContext context) : IRequestHandler<CreateTenantCommand, string>
-// {
-//     public async Task<string> Handle(CreateTenantCommand request, CancellationToken cancellationToken)
-//     {
-//         var schemaName = $"tenant_{request.CompanyName.ToLower().Replace(" ", "_")}";
+public class CreateTenantHandler(
+    HostDbContext hostContext,
+    DbContextOptions<TenantDbContext> tenantOptions, ITenantRegistrationService registrationService)
+    : IRequestHandler<CreateTenantCommand, string>
+{
+    public async Task<string> Handle(CreateTenantCommand request, CancellationToken cancellationToken)  
+    {
+        var schemaName = $"tenant_{request.CompanyName.ToLower().Replace(" ", "_")}";
 
-//         // 1. Create the schema
-//         await context.Database.ExecuteSqlRawAsync($"CREATE SCHEMA IF NOT EXISTS \"{schemaName}\";");
+        // 1. Create the physical schema
+        await hostContext.Database.ExecuteSqlRawAsync($"CREATE SCHEMA IF NOT EXISTS \"{schemaName}\";", cancellationToken);
 
-//         // 2. Generate the full script
-//         var databaseCreator = context.GetService<IRelationalDatabaseCreator>();
-//         string baseScript = databaseCreator.GenerateCreateScript();
+        // 2. Setup Tenant Context for the NEW schema
+        using var tenantContext = new TenantDbContext(tenantOptions, schemaName);
 
-//         // 3. THE FIX: Replace placeholder "tenant" with our new schema name
-//         // We replace the schema name and the sequence references
-//         string tenantScript = baseScript
-//             .Replace("\"tenant\".", $"\"{schemaName}\".")
-//             .Replace("'tenant.", $"'{schemaName}.");
+        // 3. Create the tables (Departments, Employees, Users, etc.)
+        var databaseCreator = tenantContext.GetService<IRelationalDatabaseCreator>();
+        await databaseCreator.CreateTablesAsync(cancellationToken);
 
-//         // 4. Wrap the script in a 'Continue on Error' block for Postgres
-//         // This allows the script to skip the 'public' tables that already exist
-//         var finalScript = $@"
-//         DO $$ 
-//         BEGIN 
-//             {tenantScript}
-//         EXCEPTION WHEN others THEN 
-//             RAISE NOTICE 'Skipping existing objects...';
-//         END $$;";
+        var tenantDto = new CreateTenantDto
+        {
+            CompanyName = request.CompanyName,
+            AdminEmail = request.AdminEmail,
+            Username = request.Username,
+            FirstName = request.FirstName,
+            LastName = request.LastName,
+            Password = request.Password,
+            SchemaName = schemaName
+        };
 
-//         // 5. Execute
-//         await context.Database.ExecuteSqlRawAsync(finalScript);
+        var success = registrationService.CreateTenantAsync(tenantDto);
 
-//         // 6. Register master record
-//         var newTenant = new TenantClass
-//         {
-//             CompanyName = request.CompanyName,
-//             SchemaName = schemaName,
-//             IsActive = true,
-//             CreatedOn = DateTime.Now
-//         };
+        if (!success)
+        {
+            throw new AppException("Failed to register the tenant in the master database.");
+        }
 
-//         context.Tenants.Add(newTenant);
-//         await context.SaveChangesAsync(cancellationToken);
-
-//         return schemaName;
-//     }
-// }
+        return schemaName;
+    }
+}

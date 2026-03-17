@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace Tenant.Domain.Models;
@@ -50,8 +50,6 @@ public partial class User
     public DateTime? LockoutUntil { get; set; }
 
     public int TenantId { get; set; }
-
-    public virtual ICollection<Department> Departments { get; set; } = new List<Department>();
 
     public virtual Role Role { get; set; } = null!;
 

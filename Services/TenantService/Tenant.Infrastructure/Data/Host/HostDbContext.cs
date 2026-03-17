@@ -1,23 +1,21 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System;
+using System.Collections.Generic;
+using Microsoft.EntityFrameworkCore;
 using Tenant.Domain.Models;
 using TenantModel = Tenant.Domain.Models.Tenant;
 
-namespace Tenant.Infrastructure.Data;
+namespace Tenant.Infrastructure.Data.Host;
 
-public partial class TenantDbContext : DbContext
+public partial class HostDbContext : DbContext
 {
-    public TenantDbContext()
+    public HostDbContext()
     {
     }
 
-    public TenantDbContext(DbContextOptions<TenantDbContext> options)
+    public HostDbContext(DbContextOptions<HostDbContext> options)
         : base(options)
     {
     }
-
-    public virtual DbSet<Department> Departments { get; set; }
-
-    public virtual DbSet<EmployeeList> EmployeeLists { get; set; }
 
     public virtual DbSet<Role> Roles { get; set; }
 
@@ -26,57 +24,11 @@ public partial class TenantDbContext : DbContext
     public virtual DbSet<User> Users { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        => optionsBuilder.UseNpgsql("Name=DbConnection");
+        => optionsBuilder.UseNpgsql("Name=ConnectionStrings:DbConnection");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasPostgresExtension("dblink");
-
-        modelBuilder.Entity<Department>(entity =>
-        {
-            entity.HasKey(e => e.Id).HasName("departments_pkey");
-
-            entity.ToTable("departments", "tenant");
-
-            entity.Property(e => e.Id).HasColumnName("id");
-            entity.Property(e => e.ManagerId).HasColumnName("manager_id");
-            entity.Property(e => e.Name)
-                .HasMaxLength(100)
-                .HasColumnName("name");
-
-            entity.HasOne(d => d.Manager).WithMany(p => p.Departments)
-                .HasForeignKey(d => d.ManagerId)
-                .HasConstraintName("departments_manager_id_fkey");
-        });
-
-        modelBuilder.Entity<EmployeeList>(entity =>
-        {
-            entity.HasKey(e => e.Id).HasName("employees_pkey");
-
-            entity.ToTable("employee_list", "tenant");
-
-            entity.HasIndex(e => e.Email, "employees_email_key").IsUnique();
-
-            entity.Property(e => e.Id)
-                .HasDefaultValueSql("nextval('tenant.employees_id_seq'::regclass)")
-                .HasColumnName("id");
-            entity.Property(e => e.CreatedOn)
-                .HasDefaultValueSql("CURRENT_TIMESTAMP")
-                .HasColumnType("timestamp without time zone")
-                .HasColumnName("created_on");
-            entity.Property(e => e.DepartmentId).HasColumnName("department_id");
-            entity.Property(e => e.Email)
-                .HasMaxLength(100)
-                .HasColumnName("email");
-            entity.Property(e => e.Name)
-                .HasMaxLength(100)
-                .HasColumnName("name");
-            entity.Property(e => e.Salary).HasColumnName("salary");
-
-            entity.HasOne(d => d.Department).WithMany(p => p.EmployeeLists)
-                .HasForeignKey(d => d.DepartmentId)
-                .HasConstraintName("employees_department_id_fkey");
-        });
 
         modelBuilder.Entity<Role>(entity =>
         {

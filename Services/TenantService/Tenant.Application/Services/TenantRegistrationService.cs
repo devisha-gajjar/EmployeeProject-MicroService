@@ -1,42 +1,46 @@
-
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Storage;
-using Tenant.Infrastructure.Data;
+using Tenant.Domain.Models;
+using TenantModel = Tenant.Domain.Models.Tenant;
+using Tenant.Domain.Dtos;
+using Tenant.Application.Interface;
+using Tenant.Infrastructure.Interfaces;
 
 namespace Tenant.Application.Services;
 
-public class TenantRegistrationService(TenantDbContext context)
+public class TenantRegistrationService(
+    ITenantUnitOfWork unitOfWork) : ITenantRegistrationService
 {
-    public async Task CreateTenantWithTablesAsync(string companyName)
+    public bool CreateTenantAsync(CreateTenantDto request)
     {
-        // 1. Generate a safe schema name
-        var schemaName = $"tenant_{companyName.ToLower().Replace(" ", "_")}";
-
-        // 2. Create the physical schema in Postgres
-        await context.Database.ExecuteSqlRawAsync($"CREATE SCHEMA {schemaName};");
-
-        // 3. Generate the SQL script from your DbContext
-        var databaseCreator = context.GetService<IRelationalDatabaseCreator>();
-        string baseScript = databaseCreator.GenerateCreateScript();
-
-        // 4. THE MAGIC: Replace placeholder schema with the NEW schemaName
-        // Note: Postgres uses double quotes for schema names in generated scripts
-        string tenantScript = baseScript.Replace("\"tenant\".", $"\"{schemaName}\".");
-
-        // 5. Execute the script to build tables
-        await context.Database.ExecuteSqlRawAsync(tenantScript);
-
-        // 6. Register the record in the public 'tenants' table
-        var newTenant = new Tenant.Domain.Models.Tenant
+        // 4. Create Admin User
+        // 1. Prepare the Tenant object
+        var newTenant = new TenantModel
         {
-            CompanyName = companyName,
-            SchemaName = schemaName,
+            CompanyName = request.CompanyName,
+            SchemaName = request.SchemaName,
             IsActive = true,
-            CreatedOn = DateTime.UtcNow
+            CreatedOn = DateTime.Now // Best practice to use UtcNow
         };
 
-        context.Tenants.Add(newTenant);
-        await context.SaveChangesAsync();
+        // 2. Add and Save Tenant to get the Identity ID
+        unitOfWork.Tenants.Add(newTenant);
+        unitOfWork.Save(); // The ID is now populated in newTenant.Id
+
+        // 3. Now prepare the Admin User with the new TenantId
+        var adminUser = new User
+        {
+            Username = request.Username,
+            FirstName = request.FirstName,
+            LastName = request.LastName,
+            Email = request.AdminEmail,
+            Password = BCrypt.Net.BCrypt.HashPassword(request.Password),
+            RoleId = 1,
+            CreatedOn = DateTime.Now,
+            TenantId = newTenant.TenantId // Use the ID generated in step 2
+        };
+
+        // 4. Save the User
+        unitOfWork.Users.Add(adminUser);
+        unitOfWork.Save();
+        return true;
     }
 }

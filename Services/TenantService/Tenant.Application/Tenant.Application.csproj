@@ -5,6 +5,7 @@
     <ProjectReference Include="..\Tenant.Infrastructure\Tenant.Infrastructure.csproj" />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="BCrypt.Net-Core" Version="1.6.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="8.0.25" />
   </ItemGroup>
   <PropertyGroup>
