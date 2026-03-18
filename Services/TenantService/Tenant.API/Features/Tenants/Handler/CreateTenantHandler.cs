@@ -47,7 +47,7 @@ public class CreateTenantHandler(
 
         if (!success)
         {
-            throw new AppException("Failed to register the tenant in the master database.");
+            throw new AppException("Failed to register the tenant in the master database");
         }
 
         return schemaName;
