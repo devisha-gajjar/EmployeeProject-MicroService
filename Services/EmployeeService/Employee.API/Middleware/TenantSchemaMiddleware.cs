@@ -9,8 +9,8 @@ public class TenantSchemaMiddleware(RequestDelegate next)
     {
         if (context.Request.Headers.TryGetValue("X-Tenant-Schema", out var schemaName))
         {
-            // 1. Manually open the connection if it isn't open
-            // This ensures the SET search_path "sticks" to this specific DB context instance
+            // Manually open the connection if it isn't open
+            // ensures the SET search_path "sticks" to specific DB context instance
             if (dbContext.Database.GetDbConnection().State != System.Data.ConnectionState.Open)
             {
                 await dbContext.Database.OpenConnectionAsync();

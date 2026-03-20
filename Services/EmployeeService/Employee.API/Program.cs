@@ -4,22 +4,27 @@ using Employee.API.Middleware;
 using Employee.Infrastructure.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using MediatR;
 
 var builder = WebApplication.CreateBuilder(args);
 
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// Database
+// Database Context
 builder.Services.AddDbContext<TenantDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("TenantConnection")));
 
-// Application Services
-builder.Services.ServiceClass(builder.Configuration);
-builder.Services.AddEndpointsApiExplorer();
+// Register MediatR here. 
+builder.Services.AddMediatR(cfg =>
+{
+    cfg.RegisterServicesFromAssembly(typeof(Program).Assembly);
+});
 
-builder.Services.AddSwaggerGen();
-// Exception handler
+// custom extension for other services 
+builder.Services.ServiceClass(builder.Configuration);
+
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
 
@@ -41,11 +46,12 @@ if (app.Environment.IsDevelopment())
 // Middleware
 app.UseExceptionHandler();
 
+// Custom Middleware 
 app.UseMiddleware<TenantSchemaMiddleware>();
 
 app.MapGet("/", () => "Auth API Running 🚀");
 
-// Minimal API endpoints
 app.MapEmployeeEndpoints();
+app.MapDepartmentEndpoints();
 
 app.Run();

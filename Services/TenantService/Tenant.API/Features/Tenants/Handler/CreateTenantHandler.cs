@@ -6,10 +6,8 @@ using Microsoft.EntityFrameworkCore.Storage;
 using Tenant.Api.Features.Tenants.Commands;
 using Tenant.Application.Interface;
 using Tenant.Domain.Dtos;
-using Tenant.Domain.Models;
 using Tenant.Infrastructure.Data.Host;
 using Tenant.Infrastructure.Data.Tenant;
-using TenantClass = Tenant.Domain.Models.Tenant;
 
 namespace Tenant.API.Features.Tenants.Handler;
 

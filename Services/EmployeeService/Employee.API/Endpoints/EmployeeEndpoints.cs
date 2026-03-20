@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Employee.API.Endpoints;
 
-public static class EmployeeEndpoints // Must be static
+public static class EmployeeEndpoints 
 {
     public static void MapEmployeeEndpoints(this IEndpointRouteBuilder app)
     {

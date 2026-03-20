@@ -34,7 +34,9 @@ public partial class TenantDbContext : DbContext
             // REMOVE the "tenant" string. Just use the table name.
             entity.ToTable("departments");
 
-            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.Id)
+                .HasDefaultValueSql("nextval('department_id_seq'::regclass)")
+                .HasColumnName("id");
             entity.Property(e => e.ManagerId).HasColumnName("manager_id");
             entity.Property(e => e.Name)
                 .HasMaxLength(100)
