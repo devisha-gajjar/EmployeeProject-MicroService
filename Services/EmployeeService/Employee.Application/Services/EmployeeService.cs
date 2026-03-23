@@ -1,3 +1,6 @@
+using System.Text;
+using System.Text.Json;
+using System.Threading.Tasks;
 using AutoMapper;
 using ClosedXML.Excel;
 using Employee.Application.Interfaces;
@@ -5,6 +8,7 @@ using Employee.Domain.DTOs;
 using Employee.Domain.Models;
 using Employee.Shared.Constants;
 using Employee.Shared.Exceptions;
+using RabbitMQ.Client;
 
 namespace Employee.Application.Services;
 
@@ -79,18 +83,16 @@ public class EmployeeService(
     //     return true;
     // }
 
-    public EmployeeList? SaveEmployee(AddEmployeeViewModelDto employeeDto)
+    public async Task<EmployeeList?> SaveEmployee(AddEmployeeViewModelDto employeeDto)
     {
-        // Check if the email exists in the database
         var emailExists = unitOfWork.Employees.Exists(e => e.Email == employeeDto.Email).Result;
 
-        // If email exists and the employee is not being updated, throw an exception for add
         if (emailExists && employeeDto.Id == 0)
         {
             throw new AppException("Email Already Exists!");
         }
 
-        // If the email is being changed during update, check if the new email exists
+        // email is being changed during update, check if the new email exists
         if (emailExists && employeeDto.Id != 0)
         {
             var existing = unitOfWork.Employees.GetById(employeeDto.Id);
@@ -102,7 +104,6 @@ public class EmployeeService(
 
         EmployeeList employee;
 
-        // If the employee already exists, update it
         if (employeeDto.Id != 0)
         {
             employee = unitOfWork.Employees.GetById(employeeDto.Id) ?? throw new AppException(GlobalConstants.EMP_NOT_FOUND);
@@ -110,17 +111,25 @@ public class EmployeeService(
             mapper.Map(employeeDto, employee);
             unitOfWork.Employees.Update(employee);
         }
-        else // If no ID, it's a new employee, so create one
+        else
         {
             employee = mapper.Map<EmployeeList>(employeeDto);
             employee.CreatedOn = DateTime.Now;
             unitOfWork.Employees.Add(employee);
         }
 
-        // Save via Unit of Work
         unitOfWork.Save();
 
-        // Return the saved employee entity
+        try
+        {
+            await SendWelcomeEmailMessage(employee.Email!, employee.Name);
+        }
+        catch (Exception ex)
+        {
+            // Log error but don't stop the app (so the employee stays saved)
+            Console.WriteLine($"RabbitMQ Error: {ex.Message}");
+        }
+
         return unitOfWork.Employees.GetById(employee.Id);
     }
 
@@ -130,7 +139,6 @@ public class EmployeeService(
 
         unitOfWork.Employees.Delete(emp);
 
-        // Save via Unit of Work
         unitOfWork.Save();
 
         return true;
@@ -156,5 +164,30 @@ public class EmployeeService(
         stream.Position = 0;
 
         return await Task.FromResult(stream);
+    }
+
+    public static async Task SendWelcomeEmailMessage(string email, string name)
+    {
+        var cloudAmqpUrl = "amqp://user:pass@hostname/vhost";
+
+        var factory = new ConnectionFactory() { Uri = new Uri(cloudAmqpUrl) };
+
+        // Use 'await' to get the actual connection and channel
+        using var connection = await factory.CreateConnectionAsync();
+        using var channel = await connection.CreateChannelAsync();
+
+        // In V7+, QueueDeclareAsync is used
+        await channel.QueueDeclareAsync(queue: "email_queue",
+                                       durable: true,
+                                       exclusive: false,
+                                       autoDelete: false);
+
+        var messageObj = new { Email = email, Name = name, Type = "Welcome" };
+        var body = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(messageObj));
+
+        // In V7+, BasicPublishAsync is used
+        await channel.BasicPublishAsync(exchange: "",
+                                       routingKey: "email_queue",
+                                       body: body);
     }
 }
