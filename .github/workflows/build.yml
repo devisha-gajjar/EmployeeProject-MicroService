@@ -47,12 +47,11 @@ jobs:
             New-Item -Path "${{ runner.temp }}\scanner" -ItemType Directory
           }
           dotnet tool update dotnet-sonarscanner --tool-path "${{ runner.temp }}\scanner"
-
       - name: Build and analyze
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         shell: powershell
         run: |
-          & "${{ runner.temp }}\scanner\dotnet-sonarscanner" begin /k:"devisha-gajjar_EmployeeProject-MicroService" /o:"devisha-gajjar" /d:sonar.token="${{ env:SONAR_TOKEN }}"
+          & "${{ runner.temp }}\scanner\dotnet-sonarscanner" begin /k:"devisha-gajjar_EmployeeProject-MicroService" /o:"devisha-gajjar" /d:sonar.token="${{ env.SONAR_TOKEN }}"
           dotnet build
-          & "${{ runner.temp }}\scanner\dotnet-sonarscanner" end /d:sonar.token="${{ env:SONAR_TOKEN }}"
+          & "${{ runner.temp }}\scanner\dotnet-sonarscanner" end /d:sonar.token="${{ env.SONAR_TOKEN }}"
