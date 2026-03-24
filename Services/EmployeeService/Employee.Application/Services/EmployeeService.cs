@@ -8,13 +8,12 @@ using Employee.Domain.DTOs;
 using Employee.Domain.Models;
 using Employee.Shared.Constants;
 using Employee.Shared.Exceptions;
+using Microsoft.AspNetCore.Http;
 using RabbitMQ.Client;
 
 namespace Employee.Application.Services;
 
-public class EmployeeService(
-    IEmployeeUnitOfWork unitOfWork,
-    IMapper mapper) : IEmployeeService
+public class EmployeeService(IEmployeeUnitOfWork unitOfWork, IMapper mapper, IHttpContextAccessor httpContextAccessor) : IEmployeeService
 {
     public IEnumerable<EmployeeListDto> GetEmployees()
     {
@@ -40,52 +39,10 @@ public class EmployeeService(
         return mapper.Map<AddEmployeeViewModelDto>(emp);
     }
 
-    // public EmployeeList? AddEmployee(AddEmployeeViewModelDto employeeDto)
-    // {
-    //     var emailExists = unitOfWork.Employees.Exists(e => e.Email == employeeDto.Email).Result;
-
-    //     if (emailExists)
-    //         throw new AppException("Email Alredy Exist!");
-
-    //     var emp = mapper.Map<EmployeeList>(employeeDto);
-    //     emp.CreatedOn = DateTime.UtcNow;
-
-    //     unitOfWork.Employees.Add(emp);
-
-    //     unitOfWork.Save();
-
-    //     return unitOfWork.Employees.GetById(emp.Id);
-    // }
-
-    // public bool UpdateEmployee(int id, AddEmployeeViewModelDto employeeDto)
-    // {
-    //     if (id != employeeDto.Id)
-    //         return false;
-
-    //     var existing = unitOfWork.Employees.GetById(id);
-
-    //     if (existing == null)
-    //         return false;
-
-    //     if (existing.Email != employeeDto.Email)
-    //     {
-    //         var emailExists = unitOfWork.Employees.Exists(e => e.Email == employeeDto.Email).Result;
-    //         if (emailExists) return false;
-    //     }
-
-    //     mapper.Map(employeeDto, existing);
-
-    //     unitOfWork.Employees.Update(existing);
-
-    //     // Save via Unit of Work
-    //     unitOfWork.Save();
-
-    //     return true;
-    // }
-
     public async Task<EmployeeList?> SaveEmployee(AddEmployeeViewModelDto employeeDto)
     {
-        var emailExists = unitOfWork.Employees.Exists(e => e.Email == employeeDto.Email).Result;
+        // Change .Result to await
+        var emailExists = await unitOfWork.Employees.Exists(e => e.Email == employeeDto.Email);
 
         if (emailExists && employeeDto.Id == 0)
         {
@@ -120,14 +77,19 @@ public class EmployeeService(
 
         unitOfWork.Save();
 
+        var tenantSchema = httpContextAccessor.HttpContext?.Request.Headers["X-Tenant-Schema"].ToString();
+
+        // 2. Use Unit of Work to get Company Name (Mapping handles the 'public' part)
+        var tenant = await unitOfWork.Tenants.GetByInclude(t => t.SchemaName == tenantSchema);
+        var companyName = tenant?.CompanyName ?? "Company name";
+
         try
         {
-            await SendWelcomeEmailMessage(employee.Email!, employee.Name);
+            await SendWelcomeEmailMessage(employee.Email!, employee.Name, companyName);
         }
         catch (Exception ex)
         {
-            // Log error but don't stop the app (so the employee stays saved)
-            Console.WriteLine($"RabbitMQ Error: {ex.Message}");
+            throw new AppException($"RabbitMQ Error: {ex.Message}");
         }
 
         return unitOfWork.Employees.GetById(employee.Id);
@@ -166,9 +128,9 @@ public class EmployeeService(
         return await Task.FromResult(stream);
     }
 
-    public static async Task SendWelcomeEmailMessage(string email, string name)
+    public static async Task SendWelcomeEmailMessage(string email, string name, string companyName)
     {
-        var cloudAmqpUrl = "amqp://user:pass@hostname/vhost";
+        var cloudAmqpUrl = "amqps://uritzckv:qA0oJpwmjRoVQsFWOqQ_f8siQATbQa6S@puffin.rmq2.cloudamqp.com/uritzckv";
 
         var factory = new ConnectionFactory() { Uri = new Uri(cloudAmqpUrl) };
 
@@ -182,9 +144,24 @@ public class EmployeeService(
                                        exclusive: false,
                                        autoDelete: false);
 
-        var messageObj = new { Email = email, Name = name, Type = "Welcome" };
-        var body = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(messageObj));
+        var messageObj = new
+        {
+            To = email,
+            Subject = "Welcome to the company",
+            TemplateType = "Welcome",
+            Data = new Dictionary<string, string>
+            {
+                { "companyName", companyName },
+                { "user", name },
+                { "email", email },
+                { "registrationDate", DateTime.Now.ToString("dd-MM-yyyy") },
+                { "year", DateTime.Now.Year.ToString() }
+            },
+            Cc = Array.Empty<string>(),
+            Bcc = Array.Empty<string>()
+        };
 
+        var body = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(messageObj));
         // In V7+, BasicPublishAsync is used
         await channel.BasicPublishAsync(exchange: "",
                                        routingKey: "email_queue",

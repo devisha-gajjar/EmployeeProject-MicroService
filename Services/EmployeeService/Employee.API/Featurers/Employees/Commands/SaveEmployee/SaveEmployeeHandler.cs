@@ -1,3 +1,4 @@
+using System.Threading.Tasks;
 using Employee.Application.Interfaces;
 using Employee.Domain.DTOs;
 using Employee.Domain.Models;
@@ -12,19 +13,19 @@ public record SaveEmployeeCommand(
     decimal? Salary
 );
 
-public class SaveEmployeeHandler(IEmployeeService employeeService)
-{
-    public EmployeeList? Handle(SaveEmployeeCommand command)
+    public class SaveEmployeeHandler(IEmployeeService employeeService)
     {
-        var dto = new AddEmployeeViewModelDto
+        public async Task<EmployeeList?> Handle(SaveEmployeeCommand command)
         {
-            Id = command.Id,
-            Name = command.Name,
-            Email = command.Email,
-            DepartmentId = command.DepartmentId,
-            Salary = command.Salary
-        };
+            var dto = new AddEmployeeViewModelDto
+            {
+                Id = command.Id,
+                Name = command.Name,
+                Email = command.Email,
+                DepartmentId = command.DepartmentId,
+                Salary = command.Salary
+            };
 
-        return employeeService.SaveEmployee(dto);
+            return await employeeService.SaveEmployee(dto);
+        }
     }
-}

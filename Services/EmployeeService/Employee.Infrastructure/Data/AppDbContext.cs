@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using Employee.Domain.Models;
+﻿using Employee.Domain.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace Employee.Infrastructure.Data;
@@ -16,20 +14,62 @@ public partial class AppDbContext : DbContext
     {
     }
 
+    public virtual DbSet<Role> Roles { get; set; }
+
+    public virtual DbSet<Tenant> Tenants { get; set; }
+
     public virtual DbSet<User> Users { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        => optionsBuilder.UseNpgsql("Name=TenantConnection");
+        => optionsBuilder.UseNpgsql("Name=ConnectionStrings:TenantConnection");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasPostgresExtension("dblink");
 
+        modelBuilder.Entity<Role>(entity =>
+        {
+            entity.HasKey(e => e.RoleId).HasName("roles_pkey");
+
+            entity.ToTable("roles");
+
+            entity.Property(e => e.RoleId).HasColumnName("role_id");
+            entity.Property(e => e.RoleName)
+                .HasMaxLength(255)
+                .HasColumnName("role_name");
+        });
+
+        modelBuilder.Entity<Tenant>(entity =>
+        {
+            entity.HasKey(e => e.TenantId).HasName("tenants_pkey");
+
+            entity.ToTable("tenants");
+
+            entity.HasIndex(e => e.SchemaName, "tenants_schema_name_key").IsUnique();
+
+            entity.Property(e => e.TenantId)
+                .HasDefaultValueSql("nextval('tenants_tenant_id_seq1'::regclass)")
+                .HasColumnName("tenant_id");
+            entity.Property(e => e.CompanyName)
+                .HasMaxLength(255)
+                .HasColumnName("company_name");
+            entity.Property(e => e.CreatedOn)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnType("timestamp without time zone")
+                .HasColumnName("created_on");
+            entity.Property(e => e.IsActive)
+                .HasDefaultValue(true)
+                .HasColumnName("is_active");
+            entity.Property(e => e.SchemaName)
+                .HasMaxLength(63)
+                .HasColumnName("schema_name");
+        });
+
         modelBuilder.Entity<User>(entity =>
         {
             entity.HasKey(e => e.UserId).HasName("users_pkey");
 
-            entity.ToTable("users", "global");
+            entity.ToTable("users");
 
             entity.HasIndex(e => e.Email, "users_email_key").IsUnique();
 
@@ -83,6 +123,7 @@ public partial class AppDbContext : DbContext
                 .HasColumnType("character varying")
                 .HasColumnName("profile_picture");
             entity.Property(e => e.RoleId).HasColumnName("role_id");
+            entity.Property(e => e.TenantId).HasColumnName("tenant_id");
             entity.Property(e => e.TwoFactorEnabledOn)
                 .HasColumnType("timestamp without time zone")
                 .HasColumnName("two_factor_enabled_on");
@@ -93,7 +134,18 @@ public partial class AppDbContext : DbContext
             entity.Property(e => e.Zipcode)
                 .HasMaxLength(15)
                 .HasColumnName("zipcode");
+
+            entity.HasOne(d => d.Role).WithMany(p => p.Users)
+                .HasForeignKey(d => d.RoleId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("fk_role");
+
+            entity.HasOne(d => d.Tenant).WithMany(p => p.Users)
+                .HasForeignKey(d => d.TenantId)
+                .HasConstraintName("fk_tenant");
         });
+        modelBuilder.HasSequence("global_users_global_user_id_seq");
+        modelBuilder.HasSequence("tenants_tenant_id_seq");
 
         OnModelCreatingPartial(modelBuilder);
     }

@@ -12,6 +12,12 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+builder.Services.AddHttpContextAccessor();
+
+// Global/App Context (Public Schema)
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("AppConnection")));
+
 // Database Context
 builder.Services.AddDbContext<TenantDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("TenantConnection")));

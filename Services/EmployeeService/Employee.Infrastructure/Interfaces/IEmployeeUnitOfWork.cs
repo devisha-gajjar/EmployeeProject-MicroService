@@ -8,4 +8,5 @@ public interface IEmployeeUnitOfWork : IUnitOfWork
 {
     IGenericRepository<EmployeeList> Employees { get; }
     IGenericRepository<Department> Departments { get; }
+    IGenericRepository<Tenant> Tenants { get; }
 }

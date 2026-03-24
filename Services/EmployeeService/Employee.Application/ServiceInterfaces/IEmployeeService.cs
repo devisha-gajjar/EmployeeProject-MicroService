@@ -13,7 +13,7 @@ public interface IEmployeeService
 
     // bool UpdateEmployee(int id, AddEmployeeViewModelDto employeeDto);
 
-    EmployeeList? SaveEmployee(AddEmployeeViewModelDto employeeDto);
+    Task<EmployeeList?> SaveEmployee(AddEmployeeViewModelDto employeeDto);
 
     bool DeleteEmployee(int id);
 

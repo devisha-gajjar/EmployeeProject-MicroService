@@ -22,9 +22,9 @@ public static class EmployeeEndpoints
             return result is not null ? Results.Ok(result) : Results.NotFound();
         });
 
-        group.MapPost("/save", (SaveEmployeeCommand command, [FromServices] SaveEmployeeHandler handler) =>
+        group.MapPost("/save", async (SaveEmployeeCommand command, [FromServices] SaveEmployeeHandler handler) =>
         {
-            var result = handler.Handle(command);
+            var result = await handler.Handle(command);
             return Results.Ok(result);
         });
 
