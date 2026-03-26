@@ -1,5 +1,6 @@
 using MediatR;
 using Tenant.Api.Features.Tenants.Commands;
+using Tenant.API.Features.Tenants.Handler;
 
 namespace Tenant.API.Endpoints;
 
@@ -10,7 +11,7 @@ public static class TenantEndpoints
         var group = app.MapGroup("/api/tenants")
                        .WithTags("Tenants");
 
-        group.MapPost("/", async (CreateTenantCommand command, IMediator mediator) =>
+        group.MapPost("/create", async (CreateTenantCommand command, IMediator mediator) =>
         {
             try
             {
@@ -28,12 +29,19 @@ public static class TenantEndpoints
                 return Results.BadRequest(new
                 {
                     Error = "Tenant Creation Failed",
-                    Message = ex.Message
+                    ex.Message
                 });
             }
         })
         .WithName("CreateTenant")
         .WithOpenApi();
 
+        group.MapGet("/list", async (IMediator mediator) =>
+        {
+            var tenants = await mediator.Send(new GetAllTenantsQuery());
+            return Results.Ok(tenants);
+        })
+        .WithName("GetAllTenants")
+        .WithOpenApi();
     }
 }
