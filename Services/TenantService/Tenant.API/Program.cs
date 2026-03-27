@@ -6,6 +6,11 @@ using Tenant.API.Features.Tenants.Handler;
 using Tenant.API.Extensions;
 using Tenant.API.Endpoints;
 using Tenant.Application.Common;
+using Microsoft.OpenApi.Models;
+using System.Security.Claims;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -31,7 +36,82 @@ builder.Services.AddMediatR(cfg =>
     cfg.RegisterServicesFromAssembly(typeof(CreateTenantHandler).Assembly));
 
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "Auth API",
+        Version = "v1"
+    });
+
+    // JWT Support in Swagger
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Description = "Enter: Bearer {your JWT token}",
+        Name = "Authorization",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.ApiKey,
+        Scheme = "Bearer"
+    });
+
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            new string[] {}
+        }
+    });
+});
+
+var jwtSecret =
+    builder.Configuration["JWT_SECRET"]
+    ?? Environment.GetEnvironmentVariable("JWT_SECRET")
+    ?? throw new Exception("JWT Secret not configured");
+
+var signingKey = new SymmetricSecurityKey(
+    Encoding.UTF8.GetBytes(jwtSecret)
+);
+
+
+builder.Services
+    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                // Token from Cookie
+                if (context.Token == null &&
+                    context.Request.Cookies.ContainsKey("Token"))
+                {
+                    context.Token = context.Request.Cookies["Token"];
+                }
+
+                return Task.CompletedTask;
+            }
+        };
+
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = builder.Configuration["Jwt:Issuer"],
+            ValidAudience = builder.Configuration["Jwt:Audience"],
+            IssuerSigningKey = signingKey,
+            RoleClaimType = ClaimTypes.Role
+        };
+    });// Or your specific Auth scheme
+builder.Services.AddAuthorization();
 
 var app = builder.Build();
 

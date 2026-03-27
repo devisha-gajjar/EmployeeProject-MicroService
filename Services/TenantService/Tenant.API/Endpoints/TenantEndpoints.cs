@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using MediatR;
 using Tenant.Api.Features.Tenants.Commands;
 using Tenant.API.Features.Tenants.Handler;
@@ -34,7 +35,8 @@ public static class TenantEndpoints
             }
         })
         .WithName("CreateTenant")
-        .WithOpenApi();
+        .WithOpenApi()
+        .RequireAuthorization(new AuthorizeAttribute { Roles = "SuperAdmin" });
 
         group.MapGet("/list", async (IMediator mediator) =>
         {
@@ -42,6 +44,7 @@ public static class TenantEndpoints
             return Results.Ok(tenants);
         })
         .WithName("GetAllTenants")
-        .WithOpenApi();
+        .WithOpenApi()
+        .RequireAuthorization(new AuthorizeAttribute { Roles = "Admin,SuperAdmin" });
     }
 }
