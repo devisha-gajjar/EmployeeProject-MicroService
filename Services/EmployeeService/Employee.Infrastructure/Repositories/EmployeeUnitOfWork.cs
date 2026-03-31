@@ -8,7 +8,6 @@ namespace Employee.Infrastructure.Repositories;
 
 public class EmployeeUnitOfWork : IEmployeeUnitOfWork
 {
-    // Uses the specific DbContext for the Employee microservice
     private readonly TenantDbContext _context;
     private readonly AppDbContext _appcontext;
 
@@ -21,13 +20,11 @@ public class EmployeeUnitOfWork : IEmployeeUnitOfWork
         _context = context;
         _appcontext = appDbContext;
 
-        // Wire up the shared GenericRepository with the Employee database context
         Employees = new GenericRepository<EmployeeList>(_context);
         Departments = new GenericRepository<Department>(_context);
         Tenants = new GenericRepository<Tenant>(_appcontext);
     }
 
-    // Centralized save for the Employee transaction
     public int Save()
     {
         return _context.SaveChanges();

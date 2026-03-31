@@ -6,7 +6,6 @@ using Yarp.ReverseProxy.Transforms;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 1. Get Secret Key (Must match your TokenService secret exactly)
 var jwtSecret = builder.Configuration["JWT_SECRET"]
                 ?? Environment.GetEnvironmentVariable("JWT_SECRET")
                 ?? throw new Exception("JWT Secret not configured");
@@ -23,7 +22,7 @@ builder.Services.AddCors(options =>
     });
 });
 
-// 2. Configure YARP with Request Transforms
+// Configure YARP with Request Transforms
 builder.Services
     .AddReverseProxy()
     .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"))
@@ -33,7 +32,7 @@ builder.Services
         {
             var user = transformContext.HttpContext.User;
 
-            // Helpful Debug Log
+            // Debug Log
             Console.WriteLine($"[Debug] Path: {transformContext.HttpContext.Request.Path} | Auth: {user.Identity?.IsAuthenticated} | Claims: {user.Claims.Count()}");
 
             if (user.Identity?.IsAuthenticated == true)
@@ -58,7 +57,7 @@ builder.Services
         });
     });
 
-// 3. Configure Authentication to use the Signing Key (Not Authority)
+// Configure Authentication to use the Signing Key (Not Authority)
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -68,8 +67,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateAudience = true,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            ValidIssuer = builder.Configuration["Jwt:Issuer"],     // Must be "JwtIssuerDevisha"
-            ValidAudience = builder.Configuration["Jwt:Audience"], // Must be "JwtAudienceDevisha"
+            ValidIssuer = builder.Configuration["Jwt:Issuer"],
+            ValidAudience = builder.Configuration["Jwt:Audience"],
             IssuerSigningKey = signingKey,
             ClockSkew = TimeSpan.Zero
         };
@@ -78,7 +77,6 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         {
             OnMessageReceived = context =>
             {
-                // Pull token from Cookie if header is missing
                 if (string.IsNullOrEmpty(context.Token) && context.Request.Cookies.ContainsKey("Token"))
                 {
                     context.Token = context.Request.Cookies["Token"];
@@ -93,18 +91,16 @@ builder.Services.AddAuthorization(options =>
     // This forces YARP to return 401 if the token is invalid/expired
     options.FallbackPolicy = options.DefaultPolicy;
 });
-builder.Services.AddRateLimiter(options => { /* your existing config */ });
+builder.Services.AddRateLimiter(options => { });
 
 var app = builder.Build();
 
-// 4. Pipeline Order is critical!
 app.UseRateLimiter();
 app.UseCors("ReactAppPolicy");
 
 app.UseAuthentication();
 app.UseAuthorization();
 
-// Optional: Security cleanup
 app.Use(async (context, next) =>
 {
     context.Request.Headers.Remove("X-Tenant-ID");

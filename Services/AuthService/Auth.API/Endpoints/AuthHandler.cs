@@ -7,7 +7,7 @@ namespace Auth.API.Endpoints;
 
 public static class AuthHandlers
 {
-    // Register
+    #region  Register
     public static IResult Register(RegisterDto dto, IAuthService authService)
     {
         var user = new User
@@ -29,8 +29,9 @@ public static class AuthHandlers
 
         return Results.Ok(new { Message = "Registration successful" });
     }
+    #endregion
 
-    // Login
+    #region Login
     public static async Task<IResult> Login(
         UserLoginDto dto,
         IAuthService authService,
@@ -56,8 +57,9 @@ public static class AuthHandlers
 
         return Results.Ok(result);
     }
+    #endregion
 
-    // Refresh Token
+    #region Refresh Token
     public static async Task<IResult> Refresh(
         HttpContext context,
         IAuthService authService)
@@ -77,8 +79,9 @@ public static class AuthHandlers
             accessToken = newAccessToken
         });
     }
+    #endregion
 
-    // Verify 2FA
+    #region Verify 2FA
     public static async Task<IResult> Verify2FA(
         Verify2FADto dto,
         IAuthService authService,
@@ -90,8 +93,9 @@ public static class AuthHandlers
 
         return Results.Ok(result);
     }
+    #endregion
 
-    // Setup 2FA
+    #region Setup 2FA
     public static IResult Setup2FA(
         HttpContext context,
         ITwoFactorService twoFactorService)
@@ -107,4 +111,5 @@ public static class AuthHandlers
 
         return Results.Ok(result);
     }
+    #endregion
 }

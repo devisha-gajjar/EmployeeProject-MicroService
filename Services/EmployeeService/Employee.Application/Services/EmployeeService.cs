@@ -17,7 +17,6 @@ public class EmployeeService(IEmployeeUnitOfWork unitOfWork, IMapper mapper, IHt
 {
     public IEnumerable<EmployeeListDto> GetEmployees()
     {
-        // Access the specific repository through the Unit of Work
         var employeesQuery = unitOfWork.Employees.GetQueryableInclude(
             includes: [e => e.Department]
         );
@@ -41,7 +40,6 @@ public class EmployeeService(IEmployeeUnitOfWork unitOfWork, IMapper mapper, IHt
 
     public async Task<EmployeeList?> SaveEmployee(AddEmployeeViewModelDto employeeDto)
     {
-        // Change .Result to await
         var emailExists = await unitOfWork.Employees.Exists(e => e.Email == employeeDto.Email);
 
         if (emailExists && employeeDto.Id == 0)
@@ -49,7 +47,7 @@ public class EmployeeService(IEmployeeUnitOfWork unitOfWork, IMapper mapper, IHt
             throw new AppException("Email Already Exists!");
         }
 
-        // email is being changed during update, check if the new email exists
+        // if email changed during update, check if the new email exists
         if (emailExists && employeeDto.Id != 0)
         {
             var existing = unitOfWork.Employees.GetById(employeeDto.Id);
@@ -79,7 +77,6 @@ public class EmployeeService(IEmployeeUnitOfWork unitOfWork, IMapper mapper, IHt
 
         var tenantSchema = httpContextAccessor.HttpContext?.Request.Headers["X-Tenant-Schema"].ToString();
 
-        // 2. Use Unit of Work to get Company Name (Mapping handles the 'public' part)
         var tenant = await unitOfWork.Tenants.GetByInclude(t => t.SchemaName == tenantSchema);
         var companyName = tenant?.CompanyName ?? "Company name";
 
@@ -130,15 +127,13 @@ public class EmployeeService(IEmployeeUnitOfWork unitOfWork, IMapper mapper, IHt
 
     public static async Task SendWelcomeEmailMessage(string email, string name, string companyName)
     {
-        var cloudAmqpUrl = "amqps://uritzckv:qA0oJpwmjRoVQsFWOqQ_f8siQATbQa6S@puffin.rmq2.cloudamqp.com/uritzckv";
+        var cloudAmqpUrl = Environment.GetEnvironmentVariable("RabbitMQ_ConnectionString") ?? throw new InvalidOperationException(GlobalConstants.RABBITMQ_CONFIG_MISSING);
 
         var factory = new ConnectionFactory() { Uri = new Uri(cloudAmqpUrl) };
 
-        // Use 'await' to get the actual connection and channel
         using var connection = await factory.CreateConnectionAsync();
         using var channel = await connection.CreateChannelAsync();
 
-        // In V7+, QueueDeclareAsync is used
         await channel.QueueDeclareAsync(queue: "email_queue",
                                        durable: true,
                                        exclusive: false,
@@ -162,7 +157,6 @@ public class EmployeeService(IEmployeeUnitOfWork unitOfWork, IMapper mapper, IHt
         };
 
         var body = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(messageObj));
-        // In V7+, BasicPublishAsync is used
         await channel.BasicPublishAsync(exchange: "",
                                        routingKey: "email_queue",
                                        body: body);

@@ -110,7 +110,7 @@ builder.Services
             IssuerSigningKey = signingKey,
             RoleClaimType = ClaimTypes.Role
         };
-    });// Or your specific Auth scheme
+    });
 builder.Services.AddAuthorization();
 
 var app = builder.Build();

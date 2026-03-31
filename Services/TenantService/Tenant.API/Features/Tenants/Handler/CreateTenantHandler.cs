@@ -20,13 +20,13 @@ public class CreateTenantHandler(
     {
         var schemaName = $"tenant_{request.CompanyName.ToLower().Replace(" ", "_")}";
 
-        // 1. Create the physical schema
+        // Create physical schema
         await hostContext.Database.ExecuteSqlRawAsync($"CREATE SCHEMA IF NOT EXISTS \"{schemaName}\";", cancellationToken);
 
-        // 2. Setup Tenant Context for the NEW schema
+        // Setup Tenant Context for the NEW schema
         using var tenantContext = new TenantDbContext(tenantOptions, schemaName);
 
-        // 3. Create the tables (Departments, Employees, Users, etc.)
+        // Create the tables
         var databaseCreator = tenantContext.GetService<IRelationalDatabaseCreator>();
         await databaseCreator.CreateTablesAsync(cancellationToken);
 

@@ -11,21 +11,19 @@ public class TenantRegistrationService(
 {
     public bool CreateTenantAsync(CreateTenantDto request)
     {
-        // 4. Create Admin User
-        // 1. Prepare the Tenant object
+        // Create Tenant
         var newTenant = new TenantModel
         {
             CompanyName = request.CompanyName,
             SchemaName = request.SchemaName,
             IsActive = true,
-            CreatedOn = DateTime.Now // Best practice to use UtcNow
+            CreatedOn = DateTime.Now
         };
 
-        // 2. Add and Save Tenant to get the Identity ID
         unitOfWork.Tenants.Add(newTenant);
-        unitOfWork.Save(); // The ID is now populated in newTenant.Id
+        unitOfWork.Save();
 
-        // 3. Now prepare the Admin User with the new TenantId
+        // Create Admin User 
         var adminUser = new User
         {
             Username = request.Username,
@@ -35,10 +33,9 @@ public class TenantRegistrationService(
             Password = BCrypt.Net.BCrypt.HashPassword(request.Password),
             RoleId = 1,
             CreatedOn = DateTime.Now,
-            TenantId = newTenant.TenantId // Use the ID generated in step 2
+            TenantId = newTenant.TenantId
         };
 
-        // 4. Save the User
         unitOfWork.Users.Add(adminUser);
         unitOfWork.Save();
         return true;

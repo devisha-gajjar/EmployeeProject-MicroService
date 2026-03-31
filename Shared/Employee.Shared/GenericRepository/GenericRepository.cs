@@ -6,7 +6,6 @@ namespace Employee.Shared.Repositories;
 
 public class GenericRepository<T> : IGenericRepository<T> where T : class
 {
-    // Changed from AuthDbContext to the base DbContext
     protected readonly DbContext _db;
     protected readonly DbSet<T> _dbSet;
 
@@ -26,7 +25,6 @@ public class GenericRepository<T> : IGenericRepository<T> where T : class
         return _dbSet;
     }
 
-    // Notice: ALL Save() calls have been removed from these methods!
     public void Add(T entity)
     {
         _dbSet.Add(entity);

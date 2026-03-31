@@ -45,7 +45,6 @@ public partial class TenantDbContext : DbContext
                 .HasColumnName("name");
         });
 
-        // This tells EF to physically create the sequence in the new schema
         modelBuilder.HasSequence<int>("employees_id_seq", SchemaName);
 
         modelBuilder.Entity<EmployeeList>(entity =>

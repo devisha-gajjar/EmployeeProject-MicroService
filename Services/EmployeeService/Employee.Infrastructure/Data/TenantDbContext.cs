@@ -19,10 +19,6 @@ public partial class TenantDbContext : DbContext
     public virtual DbSet<Department> Departments { get; set; }
     public virtual DbSet<EmployeeList> EmployeeLists { get; set; }
 
-    // Remove OnConfiguring if you are registering this in Program.cs
-    // protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-    //    => optionsBuilder.UseNpgsql("Name=TenantConnection");
-
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasPostgresExtension("dblink");
@@ -31,7 +27,6 @@ public partial class TenantDbContext : DbContext
         {
             entity.HasKey(e => e.Id).HasName("departments_pkey");
 
-            // REMOVE the "tenant" string. Just use the table name.
             entity.ToTable("departments");
 
             entity.Property(e => e.Id)
@@ -47,14 +42,11 @@ public partial class TenantDbContext : DbContext
         {
             entity.HasKey(e => e.Id).HasName("employees_pkey");
 
-            // REMOVE the "tenant" string. Just use the table name.
             entity.ToTable("employee_list");
 
             entity.HasIndex(e => e.Email, "employees_email_key").IsUnique();
 
             entity.Property(e => e.Id)
-                // Use the sequence name without the schema prefix 
-                // so search_path handles it.
                 .HasDefaultValueSql("nextval('employees_id_seq'::regclass)")
                 .HasColumnName("id");
 

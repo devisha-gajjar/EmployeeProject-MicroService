@@ -2,6 +2,7 @@ using System.Text;
 using System.Text.Json;
 using EmailService.DTOs;
 using EmailService.Service;
+using Employee.Shared.Constants;
 using Employee.Shared.Exceptions;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
@@ -21,12 +22,7 @@ public class EmailWorker : BackgroundService
         _emailSender = emailSender;
 
         // Connection to CloudAMQP
-        var connectionString = config["RabbitMQ:ConnectionString"];
-
-        if (string.IsNullOrEmpty(connectionString))
-        {
-            throw new AppException("RabbitMQ connection string not found in configuration!");
-        }
+        var connectionString = Environment.GetEnvironmentVariable("RabbitMQ_ConnectionString") ?? throw new InvalidOperationException(GlobalConstants.RABBITMQ_CONFIG_MISSING);
 
         var factory = new ConnectionFactory
         {

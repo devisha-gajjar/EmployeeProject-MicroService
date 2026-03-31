@@ -20,4 +20,8 @@ public class GlobalConstants
     public const string EMAIL_PATH_NOT_CONFIGURED = "Email template path is not configured.";
     public const string EMAIL_SENT_SUCCESS = "Email successfully sent to {0}.";
     #endregion
+
+    #region RabbitMQ
+    public const string RABBITMQ_CONFIG_MISSING = "RabbitMQ connection string not found.";
+    #endregion
 }

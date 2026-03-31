@@ -26,7 +26,6 @@ public static class TenantEndpoints
             }
             catch (Exception ex)
             {
-                // You can log the error here
                 return Results.BadRequest(new
                 {
                     Error = "Tenant Creation Failed",

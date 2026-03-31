@@ -67,13 +67,11 @@ public class AuthService(ICustomService customService, IGenericRepository<User> 
             user.FailedLoginCount++;
             user.LastFailedLogin = DateTime.Now;
 
-            // Optional: lock account after 10 failures
             if (user.FailedLoginCount >= 10)
                 user.LockoutUntil = DateTime.Now.AddMinutes(15);
 
             userRepository.Update(user);
 
-            // Return the failed login count
             return new LoginResponse
             {
                 FailedLoginAttempt = user.FailedLoginCount,
@@ -97,7 +95,7 @@ public class AuthService(ICustomService customService, IGenericRepository<User> 
                     ? LoginStep.RequireTwoFactorSetup
                     : LoginStep.RequireTwoFactor,
                 TempToken = customService.GenerateTempToken(user.UserId, dto.RememberMe),
-                FailedLoginAttempt = user.FailedLoginCount // Include the failed login count in the response
+                FailedLoginAttempt = user.FailedLoginCount
             };
         }
         logger.LogInformation("User logged in successfully");
@@ -150,7 +148,7 @@ public class AuthService(ICustomService customService, IGenericRepository<User> 
     #region Verify 2FA token
     public async Task<AuthTokenResponseDto> VerifyTwoFactorAsync(Verify2FADto dto)
     {
-        // 1. Validate temporary JWT (issued after username/password)
+        // Validate temporary JWT 
         var principal = customService.ValidateTempToken(dto.TempToken)
             ?? throw new AppException("Invalid or expired temporary token");
 
@@ -159,7 +157,7 @@ public class AuthService(ICustomService customService, IGenericRepository<User> 
             ?? throw new AppException("Invalid token payload")
         );
 
-        // 2. Load user
+        // Load user
         var user = await userRepository.GetByInclude(
           u => (u.UserId == userId) && !u.IsDeleted,
           q => q
@@ -170,7 +168,7 @@ public class AuthService(ICustomService customService, IGenericRepository<User> 
         if (string.IsNullOrWhiteSpace(user.TwoFactorSecret))
             throw new AppException("2FA is not enabled for this user");
 
-        // 3. Validate TOTP code
+        // Validate TOTP code
         var isValid = twoFactorService.ValidateCode(
             user.TwoFactorSecret,
             dto.Code
@@ -180,7 +178,7 @@ public class AuthService(ICustomService customService, IGenericRepository<User> 
         if (!isValid)
             throw new AppException("Invalid authentication code");
 
-        // 4. Issue final access token
+        // Issue access token
         var accessToken = tokenService.GenerateAccessToken(user);
         var refreshToken = tokenService.GenerateRefreshToken(user, rememberMe);
 
