@@ -1,0 +1,32 @@
+syntax = "proto3";
+import "google/protobuf/timestamp.proto";
+option csharp_namespace = "Employee.API.Protos";
+
+service EmployeeGrpc {
+  // The Dashboard calls this to get everything about an employee
+  rpc GetEmployeeDetails (EmployeeRequest) returns (EmployeeDetailResponse);
+}
+
+message EmployeeRequest {
+  string id = 1;
+}
+
+message EmployeeDetailResponse {
+  string full_name = 1;
+  string position = 2;
+  google.protobuf.Timestamp start_date = 3;
+  
+  // Nested lists for the Dashboard to aggregate
+  repeated TaskInfo tasks = 4;
+  repeated LeaveInfo leaves = 5;
+}
+
+message TaskInfo {
+  string name = 1;
+  string status = 2;
+}
+
+message LeaveInfo {
+  string type = 1;
+  string status = 2;
+}

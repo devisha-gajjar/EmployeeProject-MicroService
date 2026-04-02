@@ -10,4 +10,8 @@
   <ItemGroup>
     <PackageReference Include="Grpc.AspNetCore" Version="2.57.0" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Dashboard.Application\Dashboard.Application.csproj" />
+    <ProjectReference Include="..\Dashboard.Infrastructure\Dashboard.Infrastructure.csproj" />
+  </ItemGroup>
 </Project>

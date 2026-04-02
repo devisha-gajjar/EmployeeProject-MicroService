@@ -1,6 +1,6 @@
 using System.Security.Claims;
 using Auth.Application.ServiceInterfaces;
-using Auth.Domain.Constantss;
+using Auth.Domain.Constants;
 using Auth.Domain.DTOs;
 using Auth.Domain.Models;
 using Employee.Shared.Constants;
@@ -124,7 +124,7 @@ public class AuthService(ICustomService customService, IGenericRepository<User> 
             throw new ArgumentException(Constants.INVALID_LOGIN_CREDENTIALS_MESSAGE);
         }
 
-        User? user = await userRepository.GetByInclude(u => u.Email.ToLower() == userLoginDto.Email.ToLower() && !u.IsDeleted,
+        User? user = await userRepository.GetByInclude(u => u.Email.Equals(userLoginDto.Email, StringComparison.OrdinalIgnoreCase),
                                                             query => query.Include(u => u.Role)) ?? throw new ArgumentException(GlobalConstants.USER_NOT_FOUND);
 
 
@@ -137,7 +137,7 @@ public class AuthService(ICustomService customService, IGenericRepository<User> 
         string refreshToken = tokenService.GenerateRefreshToken(user, userLoginDto.RememberMe);
         if (string.IsNullOrEmpty(accessToken) || string.IsNullOrEmpty(refreshToken))
         {
-            throw new Exception(Constants.FAILED_TOKEN_GENERATION_MESSAGE);
+            throw new AppException(Constants.FAILED_TOKEN_GENERATION_MESSAGE);
         }
 
         return (accessToken, refreshToken);
@@ -237,7 +237,7 @@ public class AuthService(ICustomService customService, IGenericRepository<User> 
 
         if (string.IsNullOrEmpty(newAccessToken) || string.IsNullOrEmpty(newRefreshToken))
         {
-            throw new Exception(Constants.FAILED_TOKEN_GENERATION_MESSAGE);
+            throw new AppException(Constants.FAILED_TOKEN_GENERATION_MESSAGE);
         }
 
         return (newAccessToken, newRefreshToken);

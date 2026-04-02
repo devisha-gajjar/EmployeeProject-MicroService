@@ -8,4 +8,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
+  <ItemGroup>
+    <Protobuf Include="Protos\employee.proto" GrpcServices="Server" />
+  </ItemGroup>
 </Project>

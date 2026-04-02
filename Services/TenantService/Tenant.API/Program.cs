@@ -11,6 +11,7 @@ using System.Security.Claims;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using System.Text;
+using Employee.Shared.Exceptions;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -73,7 +74,7 @@ builder.Services.AddSwaggerGen(c =>
 var jwtSecret =
     builder.Configuration["JWT_SECRET"]
     ?? Environment.GetEnvironmentVariable("JWT_SECRET")
-    ?? throw new Exception("JWT Secret not configured");
+    ?? throw new AppException("JWT Secret not configured");
 
 var signingKey = new SymmetricSecurityKey(
     Encoding.UTF8.GetBytes(jwtSecret)
@@ -125,7 +126,7 @@ if (app.Environment.IsDevelopment())
 app.MapTenantEndpoints();
 
 app.MapGet("/", () => "Tenant Service API Running 🚀");
-app.Run();
+await app.RunAsync();
 
 // --- Support Classes ---
 

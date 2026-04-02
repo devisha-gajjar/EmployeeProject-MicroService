@@ -26,6 +26,9 @@ public static class ServiceExtentions
         services.AddScoped<ExportEmployeesHandler>();
 
         // Application Services
+        services.AddGrpc();
+
+        services.AddScoped<EmployeeGrpcService>();
         services.AddScoped<IEmployeeService, EmployeeService>();
         services.AddScoped<IDepartmentService, DepartmentService>();
 

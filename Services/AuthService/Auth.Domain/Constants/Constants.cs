@@ -1,7 +1,10 @@
-namespace Auth.Domain.Constantss;
+namespace Auth.Domain.Constants;
 
-public class Constants
+public static class Constants
 {
+    #region Keys
+    public const string REFRESH_TOKEN_KEY = "refreshToken";
+    #endregion
 
     #region Token Messages
     public const string REMEMBER_ME_CLAIM_NAME = "Remeber me";

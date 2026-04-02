@@ -4,6 +4,7 @@ using Auth.API.Endpoints;
 using Auth.API.Extensions;
 using Auth.API.Middleware;
 using Auth.Infrastructure.Data;
+using Employee.Shared.Exceptions;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
@@ -71,7 +72,7 @@ builder.Services.AddAuthorization();
 var jwtSecret =
     builder.Configuration["JWT_SECRET"]
     ?? Environment.GetEnvironmentVariable("JWT_SECRET")
-    ?? throw new Exception("JWT Secret not configured");
+    ?? throw new AppException("JWT Secret not configured");
 
 var signingKey = new SymmetricSecurityKey(
     Encoding.UTF8.GetBytes(jwtSecret)
@@ -143,4 +144,4 @@ app.MapGet("/", () => "Auth API Running 🚀");
 // Minimal API endpoints
 app.MapAuthEndpoints();
 
-app.Run();
+await app.RunAsync();

@@ -14,6 +14,7 @@ public class EmployeeUnitOfWork : IEmployeeUnitOfWork
     public IGenericRepository<EmployeeList> Employees { get; private set; }
     public IGenericRepository<Department> Departments { get; private set; }
     public IGenericRepository<Tenant> Tenants { get; private set; }
+    public IGenericRepository<User> User { get; private set; }
 
     public EmployeeUnitOfWork(TenantDbContext context, AppDbContext appDbContext)
     {
@@ -23,6 +24,7 @@ public class EmployeeUnitOfWork : IEmployeeUnitOfWork
         Employees = new GenericRepository<EmployeeList>(_context);
         Departments = new GenericRepository<Department>(_context);
         Tenants = new GenericRepository<Tenant>(_appcontext);
+        User = new GenericRepository<User>(_appcontext);
     }
 
     public int Save()

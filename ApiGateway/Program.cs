@@ -1,5 +1,5 @@
 using System.Text;
-using System.Threading.RateLimiting;
+using Employee.Shared.Exceptions;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Yarp.ReverseProxy.Transforms;
@@ -8,7 +8,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 var jwtSecret = builder.Configuration["JWT_SECRET"]
                 ?? Environment.GetEnvironmentVariable("JWT_SECRET")
-                ?? throw new Exception("JWT Secret not configured");
+                ?? throw new AppException("JWT Secret not configured");
+
 var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret));
 
 builder.Services.AddCors(options =>
@@ -109,4 +110,4 @@ app.Use(async (context, next) =>
 });
 
 app.MapReverseProxy();
-app.Run();
+await app.RunAsync();

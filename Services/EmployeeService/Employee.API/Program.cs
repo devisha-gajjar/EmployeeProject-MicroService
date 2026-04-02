@@ -5,6 +5,8 @@ using Employee.Infrastructure.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MediatR;
+using Employee.Application.Services;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -41,12 +43,20 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
         ValidationResponseHelper.CreateValidationErrorResponse(context, isDev);
 });
 
+builder.Services.AddGrpcReflection();
+
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.ListenLocalhost(50051, o => o.Protocols = HttpProtocols.Http2);
+});
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
+    app.MapGrpcReflectionService();
 }
 
 // Middleware
@@ -57,7 +67,8 @@ app.UseMiddleware<TenantSchemaMiddleware>();
 
 app.MapGet("/", () => "Auth API Running 🚀");
 
+app.MapGrpcService<EmployeeGrpcService>();
 app.MapEmployeeEndpoints();
 app.MapDepartmentEndpoints();
 
-app.Run();
+await app.RunAsync();

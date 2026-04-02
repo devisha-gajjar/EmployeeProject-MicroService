@@ -2,7 +2,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using Auth.Application.ServiceInterfaces;
-using Auth.Domain.Constantss;
+using Auth.Domain.Constants;
 using Auth.Domain.Models;
 using Employee.Shared.Constants;
 using Employee.Shared.Exceptions;
