@@ -41,7 +41,7 @@ builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo
     {
-        Title = "Auth API",
+        Title = "Token API",
         Version = "v1"
     });
 
