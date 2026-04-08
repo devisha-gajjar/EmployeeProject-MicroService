@@ -11,4 +11,12 @@
   <ItemGroup>
     <ProjectReference Include="..\Shared\Employee.Shared\Employee.Shared.csproj" />
   </ItemGroup>
+  <ItemGroup>
+  <Content Include="..\SQL\**\*.sql">
+    <SonarQubeExclude>false</SonarQubeExclude>
+  </Content>
+  <Content Include="..\db.sql">
+    <SonarQubeExclude>false</SonarQubeExclude>
+  </Content>
+</ItemGroup>
 </Project>

@@ -15,13 +15,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 
+          fetch-depth: 0
 
       # 2. Then Set up Java
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
-          java-version: '17'
+          java-version: "17"
           distribution: "zulu"
 
       - name: Cache SonarQube Cloud packages
@@ -57,7 +57,10 @@ jobs:
             /o:"devisha-gajjar" `
             /d:sonar.token="${{ env.SONAR_TOKEN }}" `
             /d:sonar.host.url="https://sonarcloud.io" `
-            /d:sonar.plsql.dataDictionary.path="SQL"
+            /d:sonar.plsql.dataDictionary.path="SQL" `
+            /d:sonar.sources="." `
+            /d:sonar.plsql.file.suffixes=".sql"
 
           dotnet build
+
           & "${{ runner.temp }}\scanner\dotnet-sonarscanner" end /d:sonar.token="${{ env.SONAR_TOKEN }}"
