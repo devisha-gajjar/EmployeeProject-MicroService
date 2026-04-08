@@ -21,6 +21,6 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
-    <Protobuf Include="..\Employee.Infrastructure\Protos\employee.proto" GrpcServices="Server" />
+    <Protobuf Include="../../../Shared/Employee.Shared/Protos/employee.proto" GrpcServices="Both" />
   </ItemGroup>
 </Project>

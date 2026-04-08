@@ -45,11 +45,6 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
 
 builder.Services.AddGrpcReflection();
 
-builder.WebHost.ConfigureKestrel(options =>
-{
-    options.ListenLocalhost(50051, o => o.Protocols = HttpProtocols.Http2);
-});
-
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())

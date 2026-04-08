@@ -8,8 +8,6 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
-  <Protobuf Include="Protos\dashboard.proto" GrpcServices="Server" />
-
-  <Protobuf Include="Protos\employee.proto" GrpcServices="Client" />
-</ItemGroup>
+    <Protobuf Include="../../../Shared/Employee.Shared/Protos/employee.proto" GrpcServices="Client" />
+  </ItemGroup>
 </Project>

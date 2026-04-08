@@ -9,6 +9,6 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
-    <Protobuf Include="Protos\employee.proto" GrpcServices="Server" />
+   <Protobuf Include="../../../Shared/Employee.Shared/Protos/employee.proto" GrpcServices="Client" />
   </ItemGroup>
 </Project>
